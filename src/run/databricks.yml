@@ -1,0 +1,80 @@
+# Lending Club Default Classifier — Production Bundle
+#
+# Orchestrates the walk-stage notebooks as a weekly retraining pipeline.
+# Deploy with: databricks bundle deploy --profile <your-profile>
+# Run ad-hoc:  databricks bundle run lending_club_retrain --profile <your-profile>
+#
+# Notes:
+#   - Tasks run on serverless compute (no cluster config needed).
+#   - The default serverless runtime ships with mlflow, sklearn, pandas, etc.
+#   - Each notebook's own %pip install cells handle lightweight extras (optuna, shap).
+bundle:
+  name: lending_club_default_classifier
+
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/genie_ml_cwr
+
+resources:
+  jobs:
+    lending_club_retrain:
+      name: "Lending Club — Weekly Retrain"
+      schedule:
+        quartz_cron_expression: "0 0 6 ? * MON *"  # Every Monday at 6 AM
+        timezone_id: America/New_York
+      email_notifications:
+        on_failure:
+          - ${workspace.current_user.userName}
+
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+
+      tasks:
+        - task_key: feature_engineering
+          notebook_task:
+            notebook_path: ${workspace.root_path}/src/walk/01_feature_engineering
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.catalog}
+
+        - task_key: training
+          depends_on:
+            - task_key: feature_engineering
+          notebook_task:
+            notebook_path: ${workspace.root_path}/src/walk/02_training
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.catalog}
+
+        - task_key: deployment
+          depends_on:
+            - task_key: training
+          notebook_task:
+            notebook_path: ${workspace.root_path}/src/walk/04_deployment
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.catalog}
+
+        - task_key: monitoring
+          depends_on:
+            - task_key: deployment
+          notebook_task:
+            notebook_path: ${workspace.root_path}/src/run/01_setup_monitoring
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.catalog}
+
+variables:
+  catalog:
+    description: "Unity Catalog catalog to write tables and models to."
+    default: main
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/lending_club_classifier

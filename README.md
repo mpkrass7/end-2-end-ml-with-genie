@@ -16,13 +16,17 @@ src/
 
 ## Dataset
 
-Lending Club loan data (ships with every Databricks workspace):
+Lending Club loan data (available in any Databricks workspace):
 
 ```
 /Volumes/samples/databricks/datasets/lending-club-loan-stats/LoanStats_2018Q2.csv
 ```
 
 130,776 loans, 145 columns. Task: binary classification predicting loan default.
+
+<p align="center">
+  <img src="images/more_advanced.gif" alt="Genie Code building the walk stage: Feature Views, Optuna tuning and training" width="100%">
+</p>
 
 ## Prerequisites
 
@@ -56,11 +60,11 @@ databricks bundle deploy --target dev
 databricks bundle run lending_club_retrain
 ```
 
-This runs all walk notebooks as a scheduled job (Monday 6 AM) with a monitoring step that sets up Data Quality Monitoring for drift detection.
+This runs all walk notebooks as a scheduled job with a monitoring step that sets up Data Quality Monitoring for drift detection.
 
 ## The prompts
 
-The `prompts/` folder contains the exact prompts used at each stage. The point of the blog is that these prompts — combined with Genie Code's knowledge of Databricks best practices — produce production-quality ML code without manual authoring.
+The `prompts/` folder contains the exact prompts used at each stage. Note that these prompts are pedagogical and intended to show the breadth of what can be done with Genie Code. Genie Code's knowledge of Databricks best practices can produce production-quality ML code without manual authoring but you should still READ WHAT IT WRITES. Think of Genie as your personal (and very determined) ML Engineer, not an omniscient deity.
 
 ## License
 
